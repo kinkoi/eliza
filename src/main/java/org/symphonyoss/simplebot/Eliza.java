@@ -74,7 +74,7 @@ public class Eliza {
         for(String initParam : initParamNames) {
             String systemProperty = System.getProperty(initParam);
             if (systemProperty == null) {
-                throw new IllegalArgumentException("Cannot find system property; make sure you're using -D" + systemProperty + " to run Eliza");
+                throw new IllegalArgumentException("Cannot find system property; make sure you're using -D" + initParam + " to run Eliza");
             } else {
                 initParams.put(initParam,systemProperty);
             }
