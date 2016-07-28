@@ -55,6 +55,8 @@ public class Eliza {
         initParamNames.add("keystore.password");
         initParamNames.add("certs.dir");
         initParamNames.add("bot.user.name");
+        initParamNames.add("bot.user.email");
+        initParamNames.add("room.stream");
     }
 
     public static void main(String[] args) {
