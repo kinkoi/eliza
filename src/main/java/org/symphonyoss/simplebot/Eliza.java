@@ -37,12 +37,23 @@ import org.symphonyoss.symphony.agent.model.MessageSubmission;
 import org.symphonyoss.symphony.clients.AuthorizationClient;
 import org.symphonyoss.symphony.pod.model.User;
 
-public class Eliza {
+
+import org.symphonyoss.client.model.Room;
+import org.symphonyoss.symphony.pod.model.Stream;
+
+
+import org.symphonyoss.client.services.*;
+import org.symphonyoss.client.services.RoomService;;
+
+
+public class Eliza implements RoomListener {
 
     private final Logger logger = LoggerFactory.getLogger(Eliza.class);
     private SymphonyClient symClient;
     private Map<String,String> initParams = new HashMap<String,String>();
-    private Chat chat;
+    private RoomService roomService;
+    private Room elizaRoom;
+
 
     private static Set<String> initParamNames = new HashSet<String>();
     static {
@@ -67,7 +78,7 @@ public class Eliza {
     public Eliza() {
         initParams();
         initAuth();
-        initChat();
+        initRoom();
         sendMessage("Hey there! I'm the Eliza!");
         sendMessage("All done here, bye!");
     }
@@ -115,20 +126,23 @@ public class Eliza {
             e.printStackTrace();
         }
     }
-
-    private void initChat() {
-        this.chat = new Chat();
-        chat.setLocalUser(symClient.getLocalUser());
-        Set<User> remoteUsers = new HashSet<User>();
+    
+    private void initRoom() {
+        Stream stream = new Stream();
+        stream.setId(initParams.get("room.stream"));
 
         try {
-            remoteUsers.add(symClient.getUsersClient().getUserFromEmail(initParams.get("receiver.user.email")));
-            chat.setRemoteUsers(remoteUsers);
-            chat.setStream(symClient.getStreamsClient().getStream(remoteUsers));
+         roomService = new RoomService(symClient);
+
+         elizaRoom = new Room();
+         elizaRoom.setStream(stream);
+         elizaRoom.setId(stream.getId());
+         elizaRoom.setRoomListener(this);
         } catch (Exception e) {
-            e.printStackTrace();
+        	e.printStackTrace();
         }
     }
+
 
     private MessageSubmission getMessage(String message) {
         MessageSubmission aMessage = new MessageSubmission();
@@ -140,7 +154,7 @@ public class Eliza {
     private void sendMessage(String message) {
         MessageSubmission messageSubmission = getMessage(message);
         try {
-            symClient.getMessageService().sendMessage(this.chat, messageSubmission);
+            symClient.getMessageService().sendMessage(elizaRoom, messageSubmission);
             logger.info("[MESSAGE] - "+message);
             System.out.println("[MESSAGE] - "+message);
         } catch (Exception e) {
@@ -148,4 +162,21 @@ public class Eliza {
         }
     }
 
+    @Override
+    public void onRoomMessage(RoomMessage roomMessage) {
+
+        Room room = roomService.getRoom(roomMessage.getId());
+
+        if(room!=null && roomMessage.getMessage() != null)
+            logger.debug("New room message detected from room: {} on stream: {} from: {} message: {}",
+                    room.getRoomDetail().getRoomAttributes().getName(),
+                    roomMessage.getRoomStream().getId(),
+                    roomMessage.getMessage().getFromUserId(),
+                    roomMessage.getMessage().getMessage()
+
+                );
+
+    }
 }
+    
+
