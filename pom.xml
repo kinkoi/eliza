@@ -59,12 +59,19 @@
           </roles>
       </developer>
     </developers>
-	
+
+    <scm>
+      <connection>scm:git:git://github.com/kinkoi/eliza.git</connection>
+      <developerConnection>scm:git:git@github.com:kinkoi/eliza.git</developerConnection>
+      <url>https://github.com/kinkoi/eliza</url>
+    </scm>
+    
     <repositories>
       <repository>
         <id>ossrh</id>
         <name>OSSRH Public Group</name>
         <url>https://oss.sonatype.org/content/groups/public</url>
+        <snapshots><enabled>true</enabled></snapshots>
       </repository>
     </repositories>
 
