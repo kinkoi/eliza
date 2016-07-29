@@ -46,11 +46,9 @@
     <dependencies>
 
 <dependency>
-    <groupId>org.symphonyoss</groupId>
-    <artifactId>symphony-client</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <scope>system</scope>
-    <systemPath>${project.basedir}/symphony-client-1.0-SNAPSHOT-jar-with-dependencies.jar</systemPath>
+  <groupId>com.symphony.mobile</groupId>
+  <artifactId>symphony-client</artifactId>
+  <version>1.0-SNAPSHOT</version>
 </dependency>
 
     </dependencies>
