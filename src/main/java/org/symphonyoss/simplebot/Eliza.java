@@ -22,28 +22,25 @@
 
 package org.symphonyoss.simplebot;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.symphonyoss.client.SymphonyClient;
 import org.symphonyoss.client.SymphonyClientFactory;
-import org.symphonyoss.client.model.Chat;
-import org.symphonyoss.client.model.SymAuth;
-import org.symphonyoss.symphony.agent.model.MessageSubmission;
-import org.symphonyoss.symphony.clients.AuthorizationClient;
-import org.symphonyoss.symphony.pod.model.User;
-
-
 import org.symphonyoss.client.model.Room;
+import org.symphonyoss.client.model.SymAuth;
+import org.symphonyoss.client.services.RoomListener;
+import org.symphonyoss.client.services.RoomMessage;
+import org.symphonyoss.client.services.RoomService;
+import org.symphonyoss.client.util.MlMessageParser;
+import org.symphonyoss.symphony.agent.model.*;
+import org.symphonyoss.symphony.clients.AuthorizationClient;
+import org.symphonyoss.symphony.clients.DataFeedClient;
 import org.symphonyoss.symphony.pod.model.Stream;
 
+import java.util.*;
 
-import org.symphonyoss.client.services.*;
-import org.symphonyoss.client.services.RoomService;;
+import static org.symphonyoss.simplebot.Eliza.ElizaCommand.*;
 
 
 public class Eliza implements RoomListener {
@@ -53,9 +50,10 @@ public class Eliza implements RoomListener {
     private Map<String,String> initParams = new HashMap<String,String>();
     private RoomService roomService;
     private Room elizaRoom;
-
-
-    private static Set<String> initParamNames = new HashSet<String>();
+    private DataFeedClient dataFeedClient;
+    private Datafeed datafeed;
+    
+    static Set<String> initParamNames = new HashSet<String>();
     static {
         initParamNames.add("sessionauth.url");
         initParamNames.add("keyauth.url");
@@ -79,8 +77,9 @@ public class Eliza implements RoomListener {
         initParams();
         initAuth();
         initRoom();
-        sendMessage("Hey there! I'm the Eliza!");
-        sendMessage("All done here, bye!");
+        initDatafeed();
+        listenDatafeed();
+        
     }
 
     private void initParams() {
@@ -143,6 +142,15 @@ public class Eliza implements RoomListener {
         }
     }
 
+    public void initDatafeed() {
+        dataFeedClient = symClient.getDataFeedClient();
+        try {
+			datafeed = dataFeedClient.createDatafeed();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
 
     private MessageSubmission getMessage(String message) {
         MessageSubmission aMessage = new MessageSubmission();
@@ -150,17 +158,90 @@ public class Eliza implements RoomListener {
         aMessage.setMessage(message);
         return aMessage;
     }
+    
+    private V2MessageSubmission getAttachmentMessage() {
+    	V2MessageSubmission message = new V2MessageSubmission();
+    	List<AttachmentInfo> attachments = new ArrayList();
+    	attachments.add(getAttachmentInfo());
+    	message.attachments(attachments);
+    	return message;
+    }
 
+    private AttachmentInfo getAttachmentInfo() {
+    	AttachmentInfo attachmentInfo = new AttachmentInfo();
+    	return attachmentInfo;
+    }
     private void sendMessage(String message) {
         MessageSubmission messageSubmission = getMessage(message);
         try {
             symClient.getMessageService().sendMessage(elizaRoom, messageSubmission);
-            logger.info("[MESSAGE] - "+message);
-            System.out.println("[MESSAGE] - "+message);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
+    private void listenDatafeed() {
+        while (true) {
+            try {
+                Thread.sleep(4000);
+                MessageList messages = dataFeedClient.getMessagesFromDatafeed(datafeed);
+                if (messages != null) {
+                    for (Message m : messages) {
+                        if (!m.getFromUserId().equals(symClient.getLocalUser().getId())) {
+                            processMessage(m);
+                        }
+                    }
+                }
+
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void processMessage(Message message) {
+        String messageString = message.getMessage();
+        if(StringUtils.isNotEmpty(messageString) && StringUtils.isNotBlank(messageString)) {
+            MlMessageParser messageParser = new MlMessageParser();
+            try {
+                messageParser.parseMessage(messageString);
+                String text = messageParser.getText();
+                if (StringUtils.startsWithIgnoreCase(text, "eliza")) {
+                    ElizaCommand cmd = getElizaCommand(text);
+                    switch (cmd) {
+                        case SAD:
+                            sendMessage("https://www.youtube.com/watch?v=mLLO2mFy4MU");
+                            break;
+                        case HUNGRY:
+                            break;
+                        case UNKNOWN:
+                            break;
+                        case HAPPY_BD:
+                            break;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private ElizaCommand getElizaCommand(String text) {
+        if(StringUtils.containsIgnoreCase(text, "sad")) {
+            return SAD;
+        } else if (StringUtils.containsIgnoreCase(text, "happy birthday")) {
+            return HAPPY_BD;
+        } else if (StringUtils.containsIgnoreCase(text, "hungry")) {
+            return HUNGRY;
+        } else {
+            return UNKNOWN;
+        }
+    }
+
 
     @Override
     public void onRoomMessage(RoomMessage roomMessage) {
@@ -176,6 +257,13 @@ public class Eliza implements RoomListener {
 
                 );
 
+    }
+
+    public enum ElizaCommand {
+        SAD,
+        HAPPY_BD,
+        HUNGRY,
+        UNKNOWN
     }
 }
     
