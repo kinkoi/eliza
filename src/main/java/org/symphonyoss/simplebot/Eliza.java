@@ -152,9 +152,9 @@ public class Eliza implements RoomListener {
 		}
     }
 
-    private MessageSubmission getMessage(String message) {
+    private MessageSubmission getMessage(String message, MessageSubmission.FormatEnum formatEnum) {
         MessageSubmission aMessage = new MessageSubmission();
-        aMessage.setFormat(MessageSubmission.FormatEnum.TEXT);
+        aMessage.setFormat(formatEnum);
         aMessage.setMessage(message);
         return aMessage;
     }
@@ -171,8 +171,8 @@ public class Eliza implements RoomListener {
     	AttachmentInfo attachmentInfo = new AttachmentInfo();
     	return attachmentInfo;
     }
-    private void sendMessage(String message) {
-        MessageSubmission messageSubmission = getMessage(message);
+    private void sendMessage(String message, MessageSubmission.FormatEnum formatEnum) {
+        MessageSubmission messageSubmission = getMessage(message, formatEnum);
         try {
             symClient.getMessageService().sendMessage(elizaRoom, messageSubmission);
         } catch (Exception e) {
@@ -214,13 +214,15 @@ public class Eliza implements RoomListener {
                     ElizaCommand cmd = getElizaCommand(text);
                     switch (cmd) {
                         case SAD:
-                            sendMessage("https://www.youtube.com/watch?v=mLLO2mFy4MU");
+                            sendMLMessage(formatURLText("https://www.youtube.com/watch?v=mLLO2mFy4MU"));
                             break;
                         case HUNGRY:
+                            sendMessage("Auh? Get some food", MessageSubmission.FormatEnum.TEXT);
                             break;
                         case UNKNOWN:
                             break;
                         case HAPPY_BD:
+                            sendMLMessage(formatURLText("https://www.youtube.com/watch?v=_z-1fTlSDF0"));
                             break;
                     }
                 }
@@ -228,6 +230,13 @@ public class Eliza implements RoomListener {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void sendMLMessage(String message) {
+        sendMessage(String.format("<messageML>%s</messageML>", message), MessageSubmission.FormatEnum.MESSAGEML);
+    }
+    private String formatURLText(String url) {
+        return String.format("<a href=\"%s\"/>", url);
     }
 
     private ElizaCommand getElizaCommand(String text) {
