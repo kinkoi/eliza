@@ -38,6 +38,9 @@ import org.symphonyoss.symphony.clients.AuthorizationClient;
 import org.symphonyoss.symphony.clients.DataFeedClient;
 import org.symphonyoss.symphony.pod.model.Stream;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.*;
 
 import static org.symphonyoss.simplebot.Eliza.ElizaCommand.*;
@@ -52,7 +55,10 @@ public class Eliza implements RoomListener {
     private Room elizaRoom;
     private DataFeedClient dataFeedClient;
     private Datafeed datafeed;
-    
+    private List<String> facts;
+    private Random randomGenerator = new Random();
+
+
     static Set<String> initParamNames = new HashSet<String>();
     static {
         initParamNames.add("sessionauth.url");
@@ -66,6 +72,7 @@ public class Eliza implements RoomListener {
         initParamNames.add("bot.user.name");
         initParamNames.add("bot.user.email");
         initParamNames.add("room.stream");
+        initParamNames.add("db.file");
     }
 
     public static void main(String[] args) {
@@ -77,6 +84,7 @@ public class Eliza implements RoomListener {
         initParams();
         initAuth();
         initRoom();
+        initDB();
         initDatafeed();
         listenDatafeed();
         
@@ -140,6 +148,21 @@ public class Eliza implements RoomListener {
         } catch (Exception e) {
         	e.printStackTrace();
         }
+    }
+
+    private void initDB() {
+        final String dbFile = initParams.get("db.file");
+        File file = new File(dbFile);
+        try (BufferedReader br = new BufferedReader(new FileReader(dbFile))) {
+            String line;
+            facts = new ArrayList<>();
+            while((line = br.readLine()) != null) {
+                facts.add(line);
+            }
+        } catch (Exception exception) {
+            System.out.println("File to open file "+file);
+        }
+
     }
 
     public void initDatafeed() {
@@ -224,11 +247,22 @@ public class Eliza implements RoomListener {
                         case HAPPY_BD:
                             sendMLMessage(formatURLText("https://www.youtube.com/watch?v=_z-1fTlSDF0"));
                             break;
+                        case FACT:
+                            sendFact();
+                            break;
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void sendFact() {
+        int factCount = facts.size();
+        if(factCount > 0) {
+            int index = randomGenerator.nextInt(factCount);
+            sendMLMessage(facts.get(index));
         }
     }
 
@@ -246,6 +280,8 @@ public class Eliza implements RoomListener {
             return HAPPY_BD;
         } else if (StringUtils.containsIgnoreCase(text, "hungry")) {
             return HUNGRY;
+        } else if (StringUtils.containsIgnoreCase(text, "fact")) {
+            return FACT;
         } else {
             return UNKNOWN;
         }
@@ -272,6 +308,7 @@ public class Eliza implements RoomListener {
         SAD,
         HAPPY_BD,
         HUNGRY,
+        FACT,
         UNKNOWN
     }
 }
