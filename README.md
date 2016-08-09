@@ -1,10 +1,10 @@
 # Symphony Eliza Bot
 
-Eliza is simple fact telling bot. You will interact with Eliza by starting the message with "Eliza". She will tell you some facts from our prepopulate database. 
+Eliza is simple fact telling bot. You will interact with Eliza by starting the message with "Eliza". She will tell you some facts from her amazing atabase.
+Business usage: 
 
-Bussiness usage:
-1. We can replace the fun fact to company fact so employee can get answer about the company.
-2. HR related fact.
+1. We can replace the fun fact to company fact so employee can get answer about the company. \
+2. HR related facts.
 
 The java command runs and exit, there is no daemon running and waiting for incoming messages.
 
